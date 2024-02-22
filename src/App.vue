@@ -1,30 +1,88 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+import { onMounted, ref } from 'vue'
+// import MySearchInput from './components/MySearchInput.vue'
+import InputAnyway from './components/InputAnyway.vue'
+import { data } from './data.json'
+const myData: any[] = data ?? []
+
+export type Item = { id: number, name: string; data: Array<any> }
+const myValue = ref<Item | null>(null)
+const myValues = ref<Array<Array<string>>>([])
+const allData = ref<Array<any>>([])
+
+const onFocused = (item: any) => {
+  console.log('onFocused', item)
+}
+const loadData = () => {
+  try {
+    allData.value = JSON.parse(localStorage.getItem('data')!) as any[]
+    console.log('data is loaded')
+  } catch (e) {
+    console.error(e)
+  }
+}
+const saveData = () => {
+  localStorage.setItem('data', JSON.stringify(allData.value))
+  console.log('data is saved')
+}
+onMounted(() => {
+  loadData()
+})
 </script>
 
 <template>
   <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
+    <div v-for="[me, parent1, parent2] in allData" class="box">
+      <div>
+        <label>me</label>
+        <div class="field is-grouped is-grouped-multiline">
+          <template v-for="({ id, type, name, level }, idx) in me.data">
+            <div class="control" :tabindex="1 + idx" @focus="onFocused({ id, type, name, level })">
+              <div class="tags has-addons mr-1">
+                <span :class="['tag', 'mr-0', 'pr-0', { blue: 'is-info', red: 'is-danger', white: 'is-light', green: 'is-success' }[type as string]]">{{ name }}</span>
+                <span :class="['tag', { blue: 'is-info', red: 'is-danger', white: 'is-light', green: 'is-success' }[type as string]]">{{ level }}</span>
+                <a class="tag is-delete"></a>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <div>
+        <label>부모: parent1</label>
+        <div class="field is-grouped is-grouped-multiline">
+          <template v-for="({ type, name, level }, idx) in parent1.data">
+            <div class="control" :tabindex="1 + me.data.length + idx">
+              <div class="tags has-addons mr-1">
+                <span :class="['tag', 'mr-0', 'pr-0', { blue: 'is-info', red: 'is-danger', white: 'is-light', green: 'is-success' }[type as string]]">{{ name }}</span>
+                <span :class="['tag', { blue: 'is-info', red: 'is-danger', white: 'is-light', green: 'is-success' }[type as string]]">{{ level }}</span>
+                <a class="tag is-delete"></a>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <div>
+        <label>부모: parent2</label>
+        <div class="field is-grouped is-grouped-multiline">
+          <template v-for="({ type, name, level }, idx) in parent2.data">
+            <div class="control" :tabindex="1 + me.data.length + parent1.data.length + idx">
+              <div class="tags has-addons mr-1">
+                <span :class="['tag', 'mr-0', 'pr-0', { blue: 'is-info', red: 'is-danger', white: 'is-light', green: 'is-success' }[type as string]]">{{ name }}</span>
+                <span :class="['tag', { blue: 'is-info', red: 'is-danger', white: 'is-light', green: 'is-success' }[type as string]]">{{ level }}</span>
+                <a class="tag is-delete"></a>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <InputAnyway :model-value="myValue" :items="myData.map((o, id) => ({ id, ...o }))" @update:modelValue="myValues.push($event)" @add:data="allData.push($event)" />
+
+    <button class="button is-button" @click="saveData">저장</button>
   </div>
-  <HelloWorld msg="Vite + Vue" />
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
-}
-</style>
+<style lang="scss" scoped></style>

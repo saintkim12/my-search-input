@@ -9,10 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "kor-string-similarity": "^1.0.2",
+    "korean-regexp": "^1.0.11",
     "vue": "^3.4.15"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.3",
+    "sass": "^1.71.0",
     "typescript": "^5.2.2",
     "vite": "^5.1.0",
     "vue-tsc": "^1.8.27"
