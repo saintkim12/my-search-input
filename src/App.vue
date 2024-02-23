@@ -5,17 +5,24 @@ import InputAnyway from './components/InputAnyway.vue'
 import { data } from './data.json'
 const myData: any[] = data ?? []
 
-export type Item = { id: number, name: string; data: Array<any> }
+export type Item = { id: number; name: string; data: Array<any> }
 const myValue = ref<Item | null>(null)
 const myValues = ref<Array<Array<string>>>([])
 const allData = ref<Array<any>>([])
 
 const onFocused = (item: any) => {
   console.log('onFocused', item)
+  myValue.value = item
+  console.log('myValue', myValue.value)
+}
+const updateItem = (item: any) => {
+  console.log('updateItem', item)
+  
 }
 const loadData = () => {
   try {
-    allData.value = JSON.parse(localStorage.getItem('data')!) as any[]
+    // allData.value = JSON.parse(localStorage.getItem('data')!) as any[]
+    allData.value = [[{ data: [{ id: 1, name: 'hello', level: 0 }] }, { data: [] }, { data: [] }]] as any[]
     console.log('data is loaded')
   } catch (e) {
     console.error(e)
@@ -27,6 +34,7 @@ const saveData = () => {
 }
 onMounted(() => {
   loadData()
+  myValue.value = null /** @FIXME 임시 */
 })
 </script>
 
@@ -49,7 +57,7 @@ onMounted(() => {
       </div>
 
       <div>
-        <label>부모: parent1</label>
+        <label>parent1</label>
         <div class="field is-grouped is-grouped-multiline">
           <template v-for="({ type, name, level }, idx) in parent1.data">
             <div class="control" :tabindex="1 + me.data.length + idx">
@@ -64,7 +72,7 @@ onMounted(() => {
       </div>
 
       <div>
-        <label>부모: parent2</label>
+        <label>parent2</label>
         <div class="field is-grouped is-grouped-multiline">
           <template v-for="({ type, name, level }, idx) in parent2.data">
             <div class="control" :tabindex="1 + me.data.length + parent1.data.length + idx">
@@ -79,7 +87,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <InputAnyway :model-value="myValue" :items="myData.map((o, id) => ({ id, ...o }))" @update:modelValue="myValues.push($event)" @add:data="allData.push($event)" />
+    <InputAnyway :model-value="myValue" :items="myData.map((o, id) => ({ id, ...o }))" @update:modelValue="updateItem" @add:dataList="myValues.push($event)" @add:data="allData.push($event)" @unselect="myValue = null" />
 
     <button class="button is-button" @click="saveData">저장</button>
   </div>
