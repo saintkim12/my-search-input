@@ -28,7 +28,7 @@ const inputValue = () => {
   return false
 }
 const onKeydown = (e: KeyboardEvent) => {
-  console.log('onKeydown', e)
+  // console.log('onKeydown', e)
   // if (e.key === 'Enter' || e.key === delim) {
   //   //   emitAndClear()
   //   // } else if (e.key === delim) {
@@ -42,7 +42,7 @@ const onKeydown = (e: KeyboardEvent) => {
       const [name, level] = innerValue.value.split(delim)
       const item = { ...props.modelValue, name, level: Number(level) || 0 }
       emit('update:modelValue', item)
-      emit('unselect')
+      // emit('unselect')
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       const [name, oldLevel] = innerValue.value.split(delim)
@@ -51,6 +51,14 @@ const onKeydown = (e: KeyboardEvent) => {
       e.preventDefault()
       const [name, oldLevel] = innerValue.value.split(delim)
       innerValue.value = [name, Math.max(0, (Number(oldLevel) || 0) - 1)].join(delim)
+    }
+  } else {
+    if (e.key === 'Enter') {
+      const [name, level] = innerValue.value.split(delim)
+      const item = { name, level: Number(level) || 0, parentId: 2 /** @FIXME 임시 */ }
+      console.log('onKeydown', item)
+      emit('update:modelValue', item)
+      // emit('unselect')
     }
   }
 }
@@ -150,7 +158,7 @@ onMounted(() => {
 <template>
   <div>
     <!-- input area -->
-    <input :value="innerValue" @keydown="onKeydown" @paste.prevent="onPaste" />
+    <input v-model="innerValue" @keydown="onKeydown" @paste.prevent="onPaste" />
     <!-- data area -->
   </div>
 </template>
