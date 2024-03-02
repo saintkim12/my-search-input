@@ -2,11 +2,21 @@
 import { computed, onMounted, ref } from 'vue'
 // import MySearchInput from './components/MySearchInput.vue'
 import InputAnyway from './components/InputAnyway.vue'
+import PasteAnyway from './components/PasteAnyway.vue'
 import { data } from './data.json'
-const myData: any[] = data ?? []
 
-type MyTag = { id: number; parentId: number; type?: string; name: string; level: number }
-export type Item = { id: number; name: string }
+function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = Math.random() * 16 | 0,
+      v = c == 'x' ? r : (r & 0x3 | 0x8)
+    return v.toString(16)
+  })
+}
+
+const myData: any[] = (data ?? []).filter(o => o.name).map((o, id) => ({ id: `${id}`, ...o }))
+
+type MyTag = { id: string; parentId: string; itemId: string; type?: string; name: string; level: number }
+export type Item = { id: string; name: string }
 const allTags = ref<Array<MyTag>>([])
 const allTreeData = ref<Array<Item[]>>([])
 const currentTag = ref<MyTag | null>(null)
@@ -27,14 +37,14 @@ const onFocused = (item: MyTag | null) => {
   currentTag.value = item ?? null
   console.log('currentTag', currentTag.value)
 }
-const updateTag = (item: Partial<MyTag>) => {
-  console.log('updateTag', item)
+const upsertTag = (item: Partial<MyTag>) => {
+  console.log('upsertTag', item)
   const idx = allTags.value.findIndex((o: MyTag) => o.id === item.id)
   console.log('idx', idx)
   if (idx !== -1) {
     allTags.value[idx] = { ...allTags.value[idx], ...item }
   } else {
-    const newItem = { ...(item as MyTag), id: Date.now() }
+    const newItem = Object.assign({ id: uuidv4() }, { ...(item as MyTag), parentId: /** @FIXME 임시 */allTreeData.value?.[0]?.[0]?.id })
     allTags.value.push(newItem)
     currentTag.value = newItem
   }
@@ -51,21 +61,36 @@ const removeTag = (item: Partial<MyTag>) => {
     }
   }
 }
+const addData = (data: [{ data: Array<Partial<MyTag>> }, { data: Array<Partial<MyTag>> }, { data: Array<Partial<MyTag>> }]) => {
+  const [meData, parent1Data, parent2Data] = data.map(o => o.data)
+  const me = { id: uuidv4(), name: 'me', data: meData.map(({ ...o }) => ({ id: uuidv4(), ...o }) as MyTag) }
+  const parent1 = { id: uuidv4(), name: 'parent1', data: parent1Data.map(({ ...o }) => ({ id: uuidv4(), ...o }) as MyTag) }
+  const parent2 = { id: uuidv4(), name: 'parent2', data: parent2Data.map(({ ...o }) => ({ id: uuidv4(), ...o }) as MyTag) }
+
+  const treeData: Array<Item> = []
+    ;[me, parent1, parent2].forEach((item) => {
+      treeData.push({ id: item.id, name: item.id })
+      item.data.forEach(tag => {
+        allTags.value.push({ ...tag, parentId: item.id } as MyTag)
+      })
+    })
+  allTreeData.value.push(treeData)
+}
 const loadData = () => {
   try {
     // allTreeData.value = JSON.parse(localStorage.getItem('data')!) as any[]
-    const savedData = {
-      allTags: [{ id: 1, parentId: 2, name: 'hello', level: 3 }],
-      allTreeData: [
-        [
-          { id: 2, name: 'myname' },
-          { id: 3, name: 'myname2' },
-          { id: 4, name: 'myname3' },
-        ],
-      ],
-    }
-    allTags.value = savedData.allTags
-    allTreeData.value = savedData.allTreeData
+    // const savedData = {
+    //   allTags: [{ id: uuidv4(), parentId: uuidv4(), name: 'hello', level: 3 }],
+    //   allTreeData: [
+    //     [
+    //       { id: uuidv4(), name: 'myname' },
+    //       { id: uuidv4(), name: 'myname2' },
+    //       { id: uuidv4(), name: 'myname3' },
+    //     ],
+    //   ],
+    // }
+    // allTags.value = savedData.allTags
+    // allTreeData.value = savedData.allTreeData
     console.log('data is loaded')
   } catch (e) {
     console.error(e)
@@ -86,10 +111,10 @@ onMounted(() => {
     <div v-for="[me, parent1, parent2] in displayTreeData" class="box">
       <div>
         <label>me</label>
-        <div class="field is-grouped is-grouped-multiline">
-          <template v-for="({ id, parentId, type, name, level }, idx) in me.data">
-            <div class="control" :tabindex="1 + idx" @focus="onFocused({ id, parentId, type, name, level })">
-              <div class="tags has-addons mr-1">
+        <div class="field is-grouped is-grouped-multiline mb-0">
+          <template v-for="({ id, parentId, itemId, type, name, level }, idx) in me.data">
+            <div class="control mr-1 mb-1" :class="[currentTag?.id === id && 'focused']" :tabindex="1 + idx" @focus="onFocused({ id, parentId, itemId, type, name, level })">
+              <div class="tags has-addons">
                 <span :class="['tag', 'mr-0', 'pr-0', { blue: 'is-info', red: 'is-danger', white: 'is-light', green: 'is-success' }[type as string]]">{{ name }}</span>
                 <span :class="['tag', { blue: 'is-info', red: 'is-danger', white: 'is-light', green: 'is-success' }[type as string]]">{{ level }}</span>
                 <a class="tag is-delete" @click.prevent="removeTag({ id })"></a>
@@ -101,10 +126,10 @@ onMounted(() => {
 
       <div>
         <label>parent1</label>
-        <div class="field is-grouped is-grouped-multiline">
-          <template v-for="({ id, parentId, type, name, level }, idx) in parent1.data">
-            <div class="control" :tabindex="1 + me.data.length + idx" @focus="onFocused({ id, parentId, type, name, level })">
-              <div class="tags has-addons mr-1">
+        <div class="field is-grouped is-grouped-multiline mb-0">
+          <template v-for="({ id, parentId, itemId, type, name, level }, idx) in parent1.data">
+            <div class="control mr-1 mb-1" :class="[currentTag?.id === id && 'focused']" :tabindex="1 + me.data.length + idx" @focus="onFocused({ id, parentId, itemId, type, name, level })">
+              <div class="tags has-addons">
                 <span :class="['tag', 'mr-0', 'pr-0', { blue: 'is-info', red: 'is-danger', white: 'is-light', green: 'is-success' }[type as string]]">{{ name }}</span>
                 <span :class="['tag', { blue: 'is-info', red: 'is-danger', white: 'is-light', green: 'is-success' }[type as string]]">{{ level }}</span>
                 <a class="tag is-delete" @click.prevent="removeTag({ id })"></a>
@@ -116,10 +141,10 @@ onMounted(() => {
 
       <div>
         <label>parent2</label>
-        <div class="field is-grouped is-grouped-multiline">
-          <template v-for="({ id, parentId, type, name, level }, idx) in parent2.data">
-            <div class="control" :tabindex="1 + me.data.length + parent1.data.length + idx" @focus="onFocused({ id, parentId, type, name, level })">
-              <div class="tags has-addons mr-1">
+        <div class="field is-grouped is-grouped-multiline mb-0">
+          <template v-for="({ id, parentId, itemId, type, name, level }, idx) in parent2.data">
+            <div class="control mr-1 mb-1" :class="[currentTag?.id === id && 'focused']" :tabindex="1 + me.data.length + parent1.data.length + idx" @focus="onFocused({ id, parentId, itemId, type, name, level })">
+              <div class="tags has-addons">
                 <span :class="['tag', 'mr-0', 'pr-0', { blue: 'is-info', red: 'is-danger', white: 'is-light', green: 'is-success' }[type as string]]">{{ name }}</span>
                 <span :class="['tag', { blue: 'is-info', red: 'is-danger', white: 'is-light', green: 'is-success' }[type as string]]">{{ level }}</span>
                 <a class="tag is-delete" @click.prevent="removeTag({ id })"></a>
@@ -130,10 +155,21 @@ onMounted(() => {
       </div>
     </div>
 
-    <InputAnyway :model-value="currentTag" :items="myData.map((o, id) => ({ id, ...o }))" @update:modelValue="updateTag" @add:dataList="1" @add:data="allTreeData.push($event)" @unselect="currentTag = null" />
+    <div>
+      <label>InputAnyway</label>
+      <InputAnyway :model-value="currentTag" :items="myData" @update:modelValue="upsertTag" @unselect="currentTag = null" />
+    </div>
+    <div>
+      <label>PasteAnyway</label>
+      <PasteAnyway :items="myData" @add:data="addData" />
+    </div>
 
     <button class="button is-button" @click="saveData">저장</button>
   </div>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.focused {
+  outline: 2px dashed #888;
+}
+</style>
