@@ -7,13 +7,13 @@ import { data } from './data.json'
 
 function uuidv4() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    var r = Math.random() * 16 | 0,
-      v = c == 'x' ? r : (r & 0x3 | 0x8)
+    var r = (Math.random() * 16) | 0,
+      v = c == 'x' ? r : (r & 0x3) | 0x8
     return v.toString(16)
   })
 }
 
-const myData: any[] = (data ?? []).filter(o => o.name).map((o, id) => ({ id: `${id}`, ...o }))
+const myData: any[] = ((data ?? []) as any[]).filter((o) => o.name).map((o, id) => ({ id: `${id}`, ...o }))
 
 type MyTag = { id: string; parentId: string; itemId: string; type?: string; name: string; level: number }
 export type Item = { id: string; name: string }
@@ -44,7 +44,7 @@ const upsertTag = (item: Partial<MyTag>) => {
   if (idx !== -1) {
     allTags.value[idx] = { ...allTags.value[idx], ...item }
   } else {
-    const newItem = Object.assign({ id: uuidv4() }, { ...(item as MyTag), parentId: /** @FIXME 임시 */allTreeData.value?.[0]?.[0]?.id })
+    const newItem = Object.assign({ id: uuidv4() }, { ...(item as MyTag), parentId: /** @FIXME 임시 */ allTreeData.value?.[0]?.[0]?.id })
     allTags.value.push(newItem)
     currentTag.value = newItem
   }
@@ -62,18 +62,18 @@ const removeTag = (item: Partial<MyTag>) => {
   }
 }
 const addData = (data: [{ data: Array<Partial<MyTag>> }, { data: Array<Partial<MyTag>> }, { data: Array<Partial<MyTag>> }]) => {
-  const [meData, parent1Data, parent2Data] = data.map(o => o.data)
-  const me = { id: uuidv4(), name: 'me', data: meData.map(({ ...o }) => ({ id: uuidv4(), ...o }) as MyTag) }
-  const parent1 = { id: uuidv4(), name: 'parent1', data: parent1Data.map(({ ...o }) => ({ id: uuidv4(), ...o }) as MyTag) }
-  const parent2 = { id: uuidv4(), name: 'parent2', data: parent2Data.map(({ ...o }) => ({ id: uuidv4(), ...o }) as MyTag) }
+  const [meData, parent1Data, parent2Data] = data.map((o) => o?.data ?? [])
+  const me = { id: uuidv4(), name: 'me', data: meData.map(({ ...o }) => ({ id: uuidv4(), ...o } as MyTag)) }
+  const parent1 = { id: uuidv4(), name: 'parent1', data: parent1Data.map(({ ...o }) => ({ id: uuidv4(), ...o } as MyTag)) }
+  const parent2 = { id: uuidv4(), name: 'parent2', data: parent2Data.map(({ ...o }) => ({ id: uuidv4(), ...o } as MyTag)) }
 
   const treeData: Array<Item> = []
-    ;[me, parent1, parent2].forEach((item) => {
-      treeData.push({ id: item.id, name: item.id })
-      item.data.forEach(tag => {
-        allTags.value.push({ ...tag, parentId: item.id } as MyTag)
-      })
+  ;[me, parent1, parent2].forEach((item) => {
+    treeData.push({ id: item.id, name: item.id })
+    item.data.forEach((tag) => {
+      allTags.value.push({ ...tag, parentId: item.id } as MyTag)
     })
+  })
   allTreeData.value.push(treeData)
 }
 const loadData = () => {
@@ -157,7 +157,7 @@ onMounted(() => {
 
     <div>
       <label>InputAnyway</label>
-      <InputAnyway :model-value="currentTag" :items="myData" @update:modelValue="upsertTag" @unselect="currentTag = null" />
+      <InputAnyway :model-value="currentTag" :items="myData" @add:data="addData" @update:modelValue="upsertTag" @unselect="currentTag = null" />
     </div>
     <div>
       <label>PasteAnyway</label>

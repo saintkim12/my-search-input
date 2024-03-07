@@ -9,7 +9,7 @@ const props = defineProps({
   items: { type: Array<any>, default: [] },
   modelValue: { type: Object as PropType<any | null> },
 })
-const emit = defineEmits(['update:modelValue', 'unselect'])
+const emit = defineEmits(['add:data', 'update:modelValue', 'unselect'])
 const delim = ';'
 const innerValue = ref('')
 const refSelect = ref<HTMLSelectElement | null>(null)
@@ -48,11 +48,15 @@ const onKeydown = (e: KeyboardEvent) => {
     }
   } else {
     if (e.key === 'Enter') {
-      const [name, level] = innerValue.value.split(delim)
-      const item = { name, level: Number(level) || 0, parentId: 2 /** @FIXME 임시 */ }
-      console.log('onKeydown', item)
-      emit('update:modelValue', item)
-      // emit('unselect')
+      if (innerValue.value.trim() === '+') {
+        emit('add:data', [{}, {}, {}])
+        innerValue.value = "";
+      } else {
+        const [name, level] = innerValue.value.split(delim)
+        const item = { name, level: Number(level) || 0, parentId: 2 /** @FIXME 임시 */ }
+        emit('update:modelValue', item)
+        // emit('unselect')
+      }
     }
   }
 
@@ -78,17 +82,26 @@ const onKeydown = (e: KeyboardEvent) => {
 // innerValue.value = [item.name, item.level].join(delim)
 // }
 
-watch(
-  () => selectValue.value,
-  (id) => {
-    const [, level] = innerValue.value.split(delim)
-    const target = props.items.find((o) => o.id === id)
-    const item = { ...props.modelValue, itemId: target.id, name: target.name, level: Number(level) || 0 }
-    emit('update:modelValue', item)
-    innerValue.value = [item.name, item.level].join(delim)
-  }
-)
-
+// const onSelectEnterKeydown = (e: Event) => {
+//   const id = (e.target as HTMLSelectElement).value
+//   const [, level] = innerValue.value.split(delim)
+//   const target = props.items.find((o) => o.id == id)
+//   console.log('id', id)
+//   console.log('target', target)
+//   const item = { ...props.modelValue, itemId: target.id, name: target.name, level: Number(level) || 0 }
+//   emit('update:modelValue', item)
+//   innerValue.value = [item.name, item.level].join(delim)
+// }
+// watch(
+//   () => selectValue.value,
+//   (id) => {
+//     const [, level] = innerValue.value.split(delim)
+//     const target = props.items.find((o) => o.id === id)
+//     const item = { ...props.modelValue, itemId: target.id, name: target.name, level: Number(level) || 0 }
+//     emit('update:modelValue', item)
+//     innerValue.value = [item.name, item.level].join(delim)
+//   }
+// )
 watch(
   () => searchKeyword.value,
   (keyword) => {
@@ -170,7 +183,7 @@ watch(
     <!-- input area -->
     <input v-model="innerValue" @keydown="onKeydown" />
     <!-- data area -->
-    <select ref="refSelect" multiple :value="selectValue" @input="1/*onSearchResultSelect(($event.target as HTMLSelectElement).value)*/">
+    <select ref="refSelect" multiple :value="selectValue" @input="1 /*onSearchResultSelect(($event.target as HTMLSelectElement).value)*/">
       <option v-for="item in searchResults" :key="item.id" :value="item.id">{{ item.name }}</option>
     </select>
   </div>
