@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from 'vue'
 import InputAnyway from './components/InputAnyway.vue'
 import PasteAnyway from './components/PasteAnyway.vue'
 import { data } from './data.json'
+import TagItem from './components/TagItem.vue'
 
 function uuidv4() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -68,12 +69,12 @@ const addData = (data: [{ data: Array<Partial<MyTag>> }, { data: Array<Partial<M
   const parent2 = { id: uuidv4(), name: 'parent2', data: parent2Data.map(({ ...o }) => ({ id: uuidv4(), ...o } as MyTag)) }
 
   const treeData: Array<Item> = []
-  ;[me, parent1, parent2].forEach((item) => {
-    treeData.push({ id: item.id, name: item.id })
-    item.data.forEach((tag) => {
-      allTags.value.push({ ...tag, parentId: item.id } as MyTag)
+    ;[me, parent1, parent2].forEach((item) => {
+      treeData.push({ id: item.id, name: item.id })
+      item.data.forEach((tag) => {
+        allTags.value.push({ ...tag, parentId: item.id } as MyTag)
+      })
     })
-  })
   allTreeData.value.push(treeData)
 }
 const loadData = () => {
@@ -110,46 +111,36 @@ onMounted(() => {
   <div>
     <div v-for="[me, parent1, parent2] in displayTreeData" class="box">
       <div>
-        <label>me</label>
+        <label :tabindex="1">me</label>
         <div class="field is-grouped is-grouped-multiline mb-0">
           <template v-for="({ id, parentId, itemId, type, name, level }, idx) in me.data">
-            <div class="control mr-1 mb-1" :class="[currentTag?.id === id && 'focused']" :tabindex="1 + idx" @focus="onFocused({ id, parentId, itemId, type, name, level })">
-              <div class="tags has-addons">
-                <span :class="['tag', 'mr-0', 'pr-0', { blue: 'is-info', red: 'is-danger', white: 'is-light', green: 'is-success' }[type as string]]">{{ name }}</span>
-                <span :class="['tag', { blue: 'is-info', red: 'is-danger', white: 'is-light', green: 'is-success' }[type as string]]">{{ level }}</span>
-                <a class="tag is-delete" @click.prevent="removeTag({ id })"></a>
-              </div>
-            </div>
+            <TagItem :tabindex="1 + 1 + idx" v-bind="{ id, parentId, itemId, type, name, level, focused: currentTag?.id === id }" @focus="onFocused({ id, parentId, itemId, type, name, level })" @remove="removeTag({ id })"
+              @update:level="upsertTag({ id, level: $event })" />
           </template>
+          <div class="control mr-1 mb-1" @click="">
+            <div class="tags has-addons"><span class="tag">+</span></div>
+          </div>
         </div>
       </div>
 
       <div>
-        <label>parent1</label>
+        <label :tabindex="1 + 1 + me.data.length">parent1</label>
         <div class="field is-grouped is-grouped-multiline mb-0">
+
           <template v-for="({ id, parentId, itemId, type, name, level }, idx) in parent1.data">
-            <div class="control mr-1 mb-1" :class="[currentTag?.id === id && 'focused']" :tabindex="1 + me.data.length + idx" @focus="onFocused({ id, parentId, itemId, type, name, level })">
-              <div class="tags has-addons">
-                <span :class="['tag', 'mr-0', 'pr-0', { blue: 'is-info', red: 'is-danger', white: 'is-light', green: 'is-success' }[type as string]]">{{ name }}</span>
-                <span :class="['tag', { blue: 'is-info', red: 'is-danger', white: 'is-light', green: 'is-success' }[type as string]]">{{ level }}</span>
-                <a class="tag is-delete" @click.prevent="removeTag({ id })"></a>
-              </div>
-            </div>
+            <TagItem :tabindex="1 + 1 + me.data.length + idx" v-bind="{ id, parentId, itemId, type, name, level, focused: currentTag?.id === id }" @focus="onFocused({ id, parentId, itemId, type, name, level })" @remove="removeTag({ id })"
+              @update:level="upsertTag({ id, level: $event })" />
           </template>
         </div>
       </div>
 
       <div>
-        <label>parent2</label>
+        <label :tabindex="1 + 1 + 1 + me.data.length + parent1.data.length">parent2</label>
         <div class="field is-grouped is-grouped-multiline mb-0">
+
           <template v-for="({ id, parentId, itemId, type, name, level }, idx) in parent2.data">
-            <div class="control mr-1 mb-1" :class="[currentTag?.id === id && 'focused']" :tabindex="1 + me.data.length + parent1.data.length + idx" @focus="onFocused({ id, parentId, itemId, type, name, level })">
-              <div class="tags has-addons">
-                <span :class="['tag', 'mr-0', 'pr-0', { blue: 'is-info', red: 'is-danger', white: 'is-light', green: 'is-success' }[type as string]]">{{ name }}</span>
-                <span :class="['tag', { blue: 'is-info', red: 'is-danger', white: 'is-light', green: 'is-success' }[type as string]]">{{ level }}</span>
-                <a class="tag is-delete" @click.prevent="removeTag({ id })"></a>
-              </div>
-            </div>
+            <TagItem :tabindex="1 + 1 + 1 + me.data.length + parent1.data.length + idx" v-bind="{ id, parentId, itemId, type, name, level, focused: currentTag?.id === id }" @focus="onFocused({ id, parentId, itemId, type, name, level })"
+              @remove="removeTag({ id })" @update:level="upsertTag({ id, level: $event })" />
           </template>
         </div>
       </div>

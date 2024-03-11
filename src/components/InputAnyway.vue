@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { arrangeBySimilarity } from 'kor-string-similarity'
-// import { getRegExp, korToEng } from 'korean-regexp'
+import { getRegExp } from 'korean-regexp'
 import { PropType, computed, ref, watch } from 'vue'
 
 const props = defineProps({
@@ -107,6 +107,11 @@ watch(
   (keyword) => {
     if (!isSearching.value) return
     if (props.items.length && keyword) {
+      const korRegExp = getRegExp(keyword, {
+        ignoreCase: true, ignoreSpace: true, global: true, initialSearch: true,
+        startsWith: true,
+        // endsWith: true,
+      })
       // const targets = getRegExp
       const targets = arrangeBySimilarity(
         keyword,
@@ -116,8 +121,9 @@ watch(
         if (!(keyword.length < 3 && similarity >= 0.1) && !(similarity >= 0.5)) return []
         const item = props.items.find((o) => o.name === _text)
         if (!item) return []
-        return [{ similarity, ...item }]
-      })
+        return [({ similarity, ...item })]
+      }).concat(props.items.flatMap(o => korRegExp.test(o.name) ? [{ ...o }] : []))
+      .filter((o, i, a) => a.findIndex(p => p.id === o.id) === i)
       console.log('targets', targets)
       searchResults.value = targets.slice()
     }
