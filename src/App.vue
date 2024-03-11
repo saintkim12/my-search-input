@@ -5,6 +5,7 @@ import InputAnyway from './components/InputAnyway.vue'
 import PasteAnyway from './components/PasteAnyway.vue'
 import { data } from './data.json'
 import TagItem from './components/TagItem.vue'
+import NameLabel from './components/NameLabel.vue'
 
 function uuidv4() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -62,20 +63,23 @@ const removeTag = (item: Partial<MyTag>) => {
     }
   }
 }
-const addData = (data: [{ data: Array<Partial<MyTag>> }, { data: Array<Partial<MyTag>> }, { data: Array<Partial<MyTag>> }]) => {
-  const [meData, parent1Data, parent2Data] = data.map((o) => o?.data ?? [])
+const addData = (data?: [{ data?: Array<Partial<MyTag>> }, { data?: Array<Partial<MyTag>> }, { data?: Array<Partial<MyTag>> }]) => {
+  const [meData, parent1Data, parent2Data] = [...Array(3).keys()].map((idx) => data?.[idx]?.data ?? [])
   const me = { id: uuidv4(), name: 'me', data: meData.map(({ ...o }) => ({ id: uuidv4(), ...o } as MyTag)) }
   const parent1 = { id: uuidv4(), name: 'parent1', data: parent1Data.map(({ ...o }) => ({ id: uuidv4(), ...o } as MyTag)) }
   const parent2 = { id: uuidv4(), name: 'parent2', data: parent2Data.map(({ ...o }) => ({ id: uuidv4(), ...o } as MyTag)) }
 
   const treeData: Array<Item> = []
-    ;[me, parent1, parent2].forEach((item) => {
-      treeData.push({ id: item.id, name: item.id })
-      item.data.forEach((tag) => {
-        allTags.value.push({ ...tag, parentId: item.id } as MyTag)
-      })
+  ;[me, parent1, parent2].forEach((item) => {
+    treeData.push({ id: item.id, name: item.id })
+    item.data.forEach((tag) => {
+      allTags.value.push({ ...tag, parentId: item.id } as MyTag)
     })
+  })
   allTreeData.value.push(treeData)
+}
+const addTagData = () => {
+  /** @TODO */
 }
 const loadData = () => {
   try {
@@ -111,36 +115,49 @@ onMounted(() => {
   <div>
     <div v-for="[me, parent1, parent2] in displayTreeData" class="box">
       <div>
-        <label :tabindex="1">me</label>
+        <NameLabel :tabindex="1" @click="onFocused({ type: 'name', itemId: 'hi', name: 'hi' } as MyTag)" @focus="onFocused({ type: 'name', itemId: 'hi' } as MyTag)">me</NameLabel>
         <div class="field is-grouped is-grouped-multiline mb-0">
           <template v-for="({ id, parentId, itemId, type, name, level }, idx) in me.data">
-            <TagItem :tabindex="1 + 1 + idx" v-bind="{ id, parentId, itemId, type, name, level, focused: currentTag?.id === id }" @focus="onFocused({ id, parentId, itemId, type, name, level })" @remove="removeTag({ id })"
-              @update:level="upsertTag({ id, level: $event })" />
+            <TagItem
+              :tabindex="1 + 1 + idx"
+              v-bind="{ id, parentId, itemId, type, name, level, focused: currentTag?.id === id }"
+              @focus="onFocused({ id, parentId, itemId, type, name, level })"
+              @remove="removeTag({ id })"
+              @update:level="upsertTag({ id, level: $event })"
+            />
           </template>
-          <div class="control mr-1 mb-1" @click="">
+          <div class="control mr-1 mb-1" @click="addTagData()">
             <div class="tags has-addons"><span class="tag">+</span></div>
           </div>
         </div>
       </div>
 
       <div>
-        <label :tabindex="1 + 1 + me.data.length">parent1</label>
+        <NameLabel :tabindex="1 + 1 + me.data.length">parent1</NameLabel>
         <div class="field is-grouped is-grouped-multiline mb-0">
-
           <template v-for="({ id, parentId, itemId, type, name, level }, idx) in parent1.data">
-            <TagItem :tabindex="1 + 1 + me.data.length + idx" v-bind="{ id, parentId, itemId, type, name, level, focused: currentTag?.id === id }" @focus="onFocused({ id, parentId, itemId, type, name, level })" @remove="removeTag({ id })"
-              @update:level="upsertTag({ id, level: $event })" />
+            <TagItem
+              :tabindex="1 + 1 + me.data.length + idx"
+              v-bind="{ id, parentId, itemId, type, name, level, focused: currentTag?.id === id }"
+              @focus="onFocused({ id, parentId, itemId, type, name, level })"
+              @remove="removeTag({ id })"
+              @update:level="upsertTag({ id, level: $event })"
+            />
           </template>
         </div>
       </div>
 
       <div>
-        <label :tabindex="1 + 1 + 1 + me.data.length + parent1.data.length">parent2</label>
+        <NameLabel :tabindex="1 + 1 + 1 + me.data.length + parent1.data.length">parent2</NameLabel>
         <div class="field is-grouped is-grouped-multiline mb-0">
-
           <template v-for="({ id, parentId, itemId, type, name, level }, idx) in parent2.data">
-            <TagItem :tabindex="1 + 1 + 1 + me.data.length + parent1.data.length + idx" v-bind="{ id, parentId, itemId, type, name, level, focused: currentTag?.id === id }" @focus="onFocused({ id, parentId, itemId, type, name, level })"
-              @remove="removeTag({ id })" @update:level="upsertTag({ id, level: $event })" />
+            <TagItem
+              :tabindex="1 + 1 + 1 + me.data.length + parent1.data.length + idx"
+              v-bind="{ id, parentId, itemId, type, name, level, focused: currentTag?.id === id }"
+              @focus="onFocused({ id, parentId, itemId, type, name, level })"
+              @remove="removeTag({ id })"
+              @update:level="upsertTag({ id, level: $event })"
+            />
           </template>
         </div>
       </div>
@@ -148,6 +165,7 @@ onMounted(() => {
 
     <div>
       <label>InputAnyway</label>
+      {{ currentTag }}
       <InputAnyway :model-value="currentTag" :items="myData" @add:data="addData" @update:modelValue="upsertTag" @unselect="currentTag = null" />
     </div>
     <div>
@@ -156,6 +174,7 @@ onMounted(() => {
     </div>
 
     <button class="button is-button" @click="saveData">저장</button>
+    <button class="button is-button" @click="addData()">추가</button>
   </div>
 </template>
 
